@@ -1,6 +1,196 @@
-def main():
-    print("Hello from m4ml-summative!")
+"""FastAPI service around the crop-yield regression model trained in code.ipynb.
+
+Run locally:
+    uv run uvicorn main:app --reload
+
+Deploy on Render:
+    Build Command: pip install -r requirements.txt
+    Start Command: uvicorn main:app --host 0.0.0.0 --port $PORT
+"""
+
+from io import StringIO
+
+import pandas as pd
+from enum import Enum
+from fastapi import FastAPI, File, HTTPException, UploadFile
+from fastapi.middleware.cors import CORSMiddleware
+from pydantic import BaseModel, Field
+from sklearn.base import clone
+from sklearn.metrics import mean_squared_error, r2_score
+from sklearn.model_selection import train_test_split
+from sklearn.preprocessing import StandardScaler
+
+import model_utils as mu
+
+app = FastAPI(
+    title="Crop Yield Prediction API",
+    description=(
+        "Predicts Yield_tons_per_hectare from field, weather, and farming-practice "
+        "data using the best regression model selected in code.ipynb."
+    ),
+    version="1.0.0",
+)
+
+# --- CORS ---------------------------------------------------------------
+# Reasoning:
+# - allow_origins is an explicit list, never "*". /retrain overwrites the live
+#   model on disk, so an open origin would let any third-party page trigger
+#   predictions or retraining using a visitor's browser session. Only the
+#   known frontend origins (local dev servers + the deployed frontend) may call this API.
+# - allow_credentials=False: this API has no cookie/session auth, so there is
+#   nothing for credentialed requests to protect — leaving it off keeps the
+#   attack surface smaller. (It must be False anyway if origins were ever "*".)
+# - allow_methods is limited to GET/POST, the only verbs the two endpoints use
+#   (no PUT/DELETE/PATCH is ever needed here).
+# - allow_headers is limited to Content-Type, since requests only ever send
+#   JSON or multipart form data — no custom auth headers exist to allow.
+ALLOWED_ORIGINS = [
+    "http://localhost:3000",  # local frontend dev server (e.g. Create React App / Next.js)
+    "http://localhost:5173",  # local Vite dev server
+    "https://your-frontend-domain.com",  # TODO: replace with the real deployed frontend origin
+]
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=ALLOWED_ORIGINS,
+    allow_credentials=False,
+    allow_methods=["GET", "POST"],
+    allow_headers=["Content-Type"],
+)
 
 
-if __name__ == "__main__":
-    main()
+# --- Request/response schema ----------------------------------------------
+# Categories and numeric bounds below are taken directly from crop_yield.csv
+# (df[col].unique() / .min() / .max()), so out-of-range or unseen-category
+# requests are rejected before they ever reach the model.
+class Region(str, Enum):
+    north = "North"
+    south = "South"
+    east = "East"
+    west = "West"
+
+
+class SoilType(str, Enum):
+    clay = "Clay"
+    loam = "Loam"
+    sandy = "Sandy"
+    silt = "Silt"
+    peaty = "Peaty"
+    chalky = "Chalky"
+
+
+class Crop(str, Enum):
+    wheat = "Wheat"
+    rice = "Rice"
+    maize = "Maize"
+    barley = "Barley"
+    soybean = "Soybean"
+    cotton = "Cotton"
+
+
+class WeatherCondition(str, Enum):
+    sunny = "Sunny"
+    rainy = "Rainy"
+    cloudy = "Cloudy"
+
+
+class PredictionRequest(BaseModel):
+    Region: Region
+    Soil_Type: SoilType
+    Crop: Crop
+    Rainfall_mm: float = Field(..., ge=100.0, le=1000.0, description="Seasonal rainfall in mm")
+    Temperature_Celsius: float = Field(..., ge=15.0, le=40.0, description="Average temperature in °C")
+    Fertilizer_Used: bool
+    Irrigation_Used: bool
+    Weather_Condition: WeatherCondition
+
+
+class PredictionResponse(BaseModel):
+    predicted_yield_tons_per_hectare: float
+
+
+class RetrainResponse(BaseModel):
+    message: str
+    algorithm: str
+    metrics: dict
+
+
+@app.get("/")
+def root():
+    return {"message": "Crop Yield Prediction API. See /docs for the interactive Swagger UI."}
+
+
+@app.post("/predict", response_model=PredictionResponse)
+def predict(payload: PredictionRequest):
+    try:
+        yhat = mu.predict_one(payload.model_dump())
+    except FileNotFoundError:
+        raise HTTPException(status_code=503, detail="Model artifacts not found on server; train the model first.")
+    return PredictionResponse(predicted_yield_tons_per_hectare=yhat)
+
+
+@app.post("/retrain", response_model=RetrainResponse)
+async def retrain(file: UploadFile = File(...)):
+    """Retrain the current best model on the original data plus newly uploaded rows.
+
+    Upload a CSV with the same raw columns as crop_yield.csv: Region, Soil_Type,
+    Crop, Rainfall_mm, Temperature_Celsius, Fertilizer_Used, Irrigation_Used,
+    Weather_Condition, Days_to_Harvest, Yield_tons_per_hectare.
+
+    The new rows are combined with the original training sample, re-encoded and
+    re-scaled from scratch (so category/scale drift from the new data is
+    captured), and used to refit a fresh copy of the current best model (same
+    algorithm and hyperparameters). All three artifacts on disk are then
+    overwritten, so /predict immediately serves the retrained model.
+    """
+    if not file.filename.endswith(".csv"):
+        raise HTTPException(status_code=400, detail="Upload a .csv file")
+
+    raw = await file.read()
+    try:
+        new_df = pd.read_csv(StringIO(raw.decode("utf-8")))
+    except Exception as exc:
+        raise HTTPException(status_code=400, detail=f"Could not parse CSV: {exc}")
+
+    required_cols = {
+        "Region", "Soil_Type", "Crop", "Rainfall_mm", "Temperature_Celsius",
+        "Fertilizer_Used", "Irrigation_Used", "Weather_Condition",
+        "Days_to_Harvest", "Yield_tons_per_hectare",
+    }
+    missing = required_cols - set(new_df.columns)
+    if missing:
+        raise HTTPException(status_code=400, detail=f"Missing columns: {sorted(missing)}")
+
+    try:
+        base_df = pd.read_csv("crop_yield.csv").sample(100_000, random_state=42)
+    except FileNotFoundError:
+        raise HTTPException(status_code=503, detail="Base training data (crop_yield.csv) not found on server.")
+
+    combined = pd.concat([base_df, new_df[list(required_cols)]], ignore_index=True)
+    combined = combined.drop(columns=["Days_to_Harvest"])
+    for col in mu.BOOLEAN_COLUMNS:
+        combined[col] = combined[col].astype(int)
+    combined = pd.get_dummies(combined, columns=mu.CATEGORICAL_COLUMNS, drop_first=True)
+
+    X = combined.drop(columns=["Yield_tons_per_hectare"])
+    y = combined["Yield_tons_per_hectare"]
+    X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
+
+    scaler = StandardScaler()
+    X_train_s = scaler.fit_transform(X_train)
+    X_test_s = scaler.transform(X_test)
+
+    current_model, _, _ = mu.load_artifacts()
+    new_model = clone(current_model)
+    new_model.fit(X_train_s, y_train)
+
+    pred = new_model.predict(X_test_s)
+    metrics = {"MSE": mean_squared_error(y_test, pred), "R2": r2_score(y_test, pred)}
+
+    mu.save_artifacts(new_model, scaler, X.columns.tolist())
+
+    return RetrainResponse(
+        message=f"Retrained on {len(new_df)} new row(s) + {len(base_df)} existing rows.",
+        algorithm=type(new_model).__name__,
+        metrics=metrics,
+    )
