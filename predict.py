@@ -1,10 +1,10 @@
-"""Standalone script: load the saved best model and predict crop yield for a new record.
+"""Quick script that loads the saved model and predicts yield for one new record.
 
 Usage:
     uv run python predict.py
 
-Requires best_model.joblib, scaler.joblib and feature_columns.joblib to already
-exist in this directory (produced by code.ipynb).
+Needs best_model.joblib, scaler.joblib, and feature_columns.joblib to already
+exist here (these get made by code.ipynb).
 """
 
 import model_utils as mu

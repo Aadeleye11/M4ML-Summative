@@ -3,13 +3,11 @@ import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 
-// Point this at your running API: your Render URL once deployed
-// (e.g. https://your-service.onrender.com), or, for local testing:
-//   - Chrome/web, desktop, iOS simulator: http://127.0.0.1:8000
-//   - Android emulator:                   http://10.0.2.2:8000
-//   - physical device:                    http://<your-computer's-LAN-IP>:8000
-// If testing on Chrome, also launch with a fixed port so it matches the
-// CORS allow-list in main.py's ALLOWED_ORIGINS:
+// change this to wherever the API is actually running
+//   - chrome/web, desktop, ios sim: http://127.0.0.1:8000
+//   - android emulator: http://10.0.2.2:8000
+//   - real device: http://<your computer's LAN IP>:8000
+// if running on chrome, use a fixed port so it matches ALLOWED_ORIGINS in main.py:
 //   flutter run -d chrome --web-port=3000
 const String apiBaseUrl = 'http://127.0.0.1:8000';
 
@@ -52,7 +50,7 @@ class CropYieldApp extends StatelessWidget {
 class PredictionPage extends StatefulWidget {
   PredictionPage({super.key, http.Client? client}) : client = client ?? http.Client();
 
-  // Injectable so tests can supply a MockClient instead of hitting the network.
+  // so tests can swap in a MockClient instead of hitting the real network
   final http.Client client;
 
   @override

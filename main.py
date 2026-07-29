@@ -1,4 +1,4 @@
-"""FastAPI service around the crop-yield regression model trained in code.ipynb.
+"""FastAPI wrapper around the crop yield model trained in code.ipynb.
 
 Run locally:
     uv run uvicorn main:app --reload
@@ -31,23 +31,15 @@ app = FastAPI(
     version="1.0.0",
 )
 
-# --- CORS ---------------------------------------------------------------
-# Reasoning:
-# - allow_origins is an explicit list, never "*". /retrain overwrites the live
-#   model on disk, so an open origin would let any third-party page trigger
-#   predictions or retraining using a visitor's browser session. Only the
-#   known frontend origins (local dev servers + the deployed frontend) may call this API.
-# - allow_credentials=False: this API has no cookie/session auth, so there is
-#   nothing for credentialed requests to protect — leaving it off keeps the
-#   attack surface smaller. (It must be False anyway if origins were ever "*".)
-# - allow_methods is limited to GET/POST, the only verbs the two endpoints use
-#   (no PUT/DELETE/PATCH is ever needed here).
-# - allow_headers is limited to Content-Type, since requests only ever send
-#   JSON or multipart form data — no custom auth headers exist to allow.
+# CORS setup
+# only allowing specific origins here (not "*") because /retrain can overwrite
+# the saved model file, so random websites shouldn't be able to hit that route.
+# no cookies or auth tokens used anywhere so allow_credentials just stays False.
+# the two routes below only ever need GET/POST and a Content-Type header.
 ALLOWED_ORIGINS = [
-    "http://localhost:3000",  # local frontend dev server (e.g. Create React App / Next.js)
-    "http://localhost:5173",  # local Vite dev server
-    "https://your-frontend-domain.com",  # TODO: replace with the real deployed frontend origin
+    "http://localhost:3000",  # react/next dev server
+    "http://localhost:5173",  # vite dev server
+    "https://your-frontend-domain.com",  # TODO: put the real deployed url here
 ]
 
 app.add_middleware(
@@ -59,10 +51,10 @@ app.add_middleware(
 )
 
 
-# --- Request/response schema ----------------------------------------------
-# Categories and numeric bounds below are taken directly from crop_yield.csv
-# (df[col].unique() / .min() / .max()), so out-of-range or unseen-category
-# requests are rejected before they ever reach the model.
+# request/response schema
+# categories and min/max values below came straight from crop_yield.csv
+# (just ran df[col].unique() and .min()/.max()), so pydantic rejects bad
+# input before it ever gets near the model.
 class Region(str, Enum):
     north = "North"
     south = "South"
@@ -131,17 +123,16 @@ def predict(payload: PredictionRequest):
 
 @app.post("/retrain", response_model=RetrainResponse)
 async def retrain(file: UploadFile = File(...)):
-    """Retrain the current best model on the original data plus newly uploaded rows.
+    """Retrain the model on the original data plus whatever CSV gets uploaded.
 
-    Upload a CSV with the same raw columns as crop_yield.csv: Region, Soil_Type,
-    Crop, Rainfall_mm, Temperature_Celsius, Fertilizer_Used, Irrigation_Used,
+    The CSV needs the same columns as crop_yield.csv: Region, Soil_Type, Crop,
+    Rainfall_mm, Temperature_Celsius, Fertilizer_Used, Irrigation_Used,
     Weather_Condition, Days_to_Harvest, Yield_tons_per_hectare.
 
-    The new rows are combined with the original training sample, re-encoded and
-    re-scaled from scratch (so category/scale drift from the new data is
-    captured), and used to refit a fresh copy of the current best model (same
-    algorithm and hyperparameters). All three artifacts on disk are then
-    overwritten, so /predict immediately serves the retrained model.
+    Basically just combines the new rows with the original sample, redoes the
+    encoding and scaling from scratch, and refits a fresh copy of whichever
+    model won before. Overwrites all 3 saved files so /predict uses the
+    updated model right away.
     """
     if not file.filename.endswith(".csv"):
         raise HTTPException(status_code=400, detail="Upload a .csv file")

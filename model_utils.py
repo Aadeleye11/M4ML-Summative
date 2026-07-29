@@ -1,8 +1,8 @@
-"""Shared model I/O and preprocessing used by predict.py and the FastAPI app (main.py).
+"""Model loading and preprocessing shared by predict.py and main.py.
 
-Kept in one place so the raw-row encoding logic (bool -> int, one-hot, column
-reindex) can't drift between the CLI script and the API — both call the same
-functions instead of each re-implementing the training-time preprocessing.
+Put it all in one place so the encoding logic (bool to int, one-hot, reindex
+columns) doesn't end up different in the CLI script vs the API. Both just
+call these same functions instead of copy-pasting the preprocessing.
 """
 
 import joblib
@@ -17,7 +17,7 @@ BOOLEAN_COLUMNS = ["Fertilizer_Used", "Irrigation_Used"]
 
 
 def load_artifacts():
-    """Load (model, scaler, feature_columns) produced by code.ipynb."""
+    """Loads the model, scaler, and feature columns saved by code.ipynb."""
     model = joblib.load(MODEL_PATH)
     scaler = joblib.load(SCALER_PATH)
     feature_columns = joblib.load(FEATURE_COLUMNS_PATH)
@@ -31,10 +31,10 @@ def save_artifacts(model, scaler, feature_columns) -> None:
 
 
 def encode_raw(df: pd.DataFrame, feature_columns) -> pd.DataFrame:
-    """Reproduce training-time encoding for raw (unencoded) rows.
+    """Encodes a raw row the same way it was done during training.
 
-    Any dummy column not present in `df` (e.g. a category not hit by this
-    particular batch) is filled with 0, matching training-time encoding.
+    If a dummy column is missing from `df` (like a category that just didn't
+    show up in this batch), it gets filled with 0 to match what training saw.
     """
     df = df.copy()
     for col in BOOLEAN_COLUMNS:
@@ -44,7 +44,7 @@ def encode_raw(df: pd.DataFrame, feature_columns) -> pd.DataFrame:
 
 
 def predict_one(sample: dict) -> float:
-    """Predict Yield_tons_per_hectare for one new, raw (unencoded) record."""
+    """Predicts Yield_tons_per_hectare for one raw, unencoded record."""
     model, scaler, feature_columns = load_artifacts()
     row = encode_raw(pd.DataFrame([sample]), feature_columns)
     row_scaled = scaler.transform(row)

@@ -48,8 +48,7 @@ void main() {
     await tester.pumpWidget(CropYieldApp());
 
     expect(find.text('Crop Yield Predictor'), findsWidgets);
-    // 6 category/bool dropdowns (Region, Soil Type, Crop, Fertilizer, Irrigation, Weather)
-    // + 2 free-text numeric fields (Rainfall, Temperature) = 8 inputs, one per model variable.
+    // 6 dropdowns + 2 text fields = one field per model input
     expect(find.byType(DropdownButtonFormField<String>), findsNWidgets(4));
     expect(find.byType(DropdownButtonFormField<bool>), findsNWidgets(2));
     expect(find.byType(TextFormField), findsNWidgets(2));
