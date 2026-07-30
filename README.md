@@ -6,7 +6,7 @@ My mission is to make Nigerian smallholder farming a data-driven practice — tr
 
 ## Demo
 
-YouTube video demo: _TODO — add link_
+YouTube video demo: https://youtu.be/SSAMcy-Hwng
 
 ## Dataset
 
