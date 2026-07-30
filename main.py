@@ -128,11 +128,6 @@ async def retrain(file: UploadFile = File(...)):
     The CSV needs the same columns as crop_yield.csv: Region, Soil_Type, Crop,
     Rainfall_mm, Temperature_Celsius, Fertilizer_Used, Irrigation_Used,
     Weather_Condition, Days_to_Harvest, Yield_tons_per_hectare.
-
-    Basically just combines the new rows with the original sample, redoes the
-    encoding and scaling from scratch, and refits a fresh copy of whichever
-    model won before. Overwrites all 3 saved files so /predict uses the
-    updated model right away.
     """
     if not file.filename.endswith(".csv"):
         raise HTTPException(status_code=400, detail="Upload a .csv file")
