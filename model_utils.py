@@ -5,12 +5,16 @@ columns) doesn't end up different in the CLI script vs the API. Both just
 call these same functions instead of copy-pasting the preprocessing.
 """
 
+from pathlib import Path
+
 import joblib
 import pandas as pd
 
-MODEL_PATH = "best_model.joblib"
-SCALER_PATH = "scaler.joblib"
-FEATURE_COLUMNS_PATH = "feature_columns.joblib"
+_BASE_DIR = Path(__file__).resolve().parent
+
+MODEL_PATH = _BASE_DIR / "best_model.joblib"
+SCALER_PATH = _BASE_DIR / "scaler.joblib"
+FEATURE_COLUMNS_PATH = _BASE_DIR / "feature_columns.joblib"
 
 CATEGORICAL_COLUMNS = ["Region", "Soil_Type", "Crop", "Weather_Condition"]
 BOOLEAN_COLUMNS = ["Fertilizer_Used", "Irrigation_Used"]

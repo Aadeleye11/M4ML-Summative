@@ -1,11 +1,16 @@
 """Quick script that loads the saved model and predicts yield for one new record.
 
 Usage:
-    uv run python predict.py
+    uv run python API/predict.py
 
 Needs best_model.joblib, scaler.joblib, and feature_columns.joblib to already
-exist here (these get made by code.ipynb).
+exist in the parent (summative/) folder (these get made by code.ipynb).
 """
+
+import sys
+from pathlib import Path
+
+sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
 import model_utils as mu
 

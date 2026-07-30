@@ -6,8 +6,8 @@ Predicts `Yield_tons_per_hectare` from field, weather, and farming-practice data
 
 - `code.ipynb` — data exploration, feature engineering, and model comparison/selection
 - `main.py` — FastAPI app exposing `/predict` and `/retrain`
-- `model_utils.py` — model loading/encoding shared by `main.py` and `predict.py`
-- `predict.py` — standalone script for a one-off prediction
+- `model_utils.py` — model loading/encoding shared by `main.py` and `API/predict.py`
+- `API/predict.py` — standalone script for a one-off prediction
 - `crop_yield_app/` — Flutter frontend
 - `best_model.joblib`, `scaler.joblib`, `feature_columns.joblib` — saved model artifacts produced by `code.ipynb`
 
