@@ -39,7 +39,7 @@ app = FastAPI(
 ALLOWED_ORIGINS = [
     "http://localhost:3000",  # react/next dev server
     "http://localhost:5173",  # vite dev server
-    "https://your-frontend-domain.com",  # TODO: put the real deployed url here
+    "https://crop-yield-api-9mdx.onrender.com",  # deployed url
 ]
 
 app.add_middleware(
