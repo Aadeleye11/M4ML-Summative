@@ -208,6 +208,10 @@ class _PredictionPageState extends State<PredictionPage> {
           child: Form(
             key: _formKey,
             autovalidateMode: AutovalidateMode.onUserInteraction,
+            // One input widget per prediction variable (8 total): dropdowns for the
+            // 6 fixed-choice fields (closed enums on the API side, so a typo like
+            // "north" vs "North" would otherwise fail case-sensitive validation),
+            // text fields for the 2 continuous numeric ranges below.
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [

@@ -47,10 +47,19 @@ Live API: **https://crop-yield-api-9mdx.onrender.com** (Swagger UI at https://cr
 
 ## Flutter app
 
+This is a mobile app — run it on an Android emulator, iOS simulator, or a physical device (not the web/Chrome target).
+
 ```bash
 cd crop_yield_app
 flutter pub get
-flutter run -d chrome --web-port=3000
+flutter devices          # lists available emulators/devices
+flutter run -d <device-id>
 ```
 
-`apiBaseUrl` in `lib/main.dart` defaults to `http://127.0.0.1:8000` for local testing against the API above. Point it at the Render URL to use the hosted API instead.
+`apiBaseUrl` in `lib/main.dart` defaults to `http://127.0.0.1:8000`, which works for a Windows/macOS/Linux desktop run or a physical device on the same network as the API (using its LAN IP). On an **Android emulator**, `127.0.0.1` refers to the emulator itself, not your computer — change `apiBaseUrl` to `http://10.0.2.2:8000` for local testing there, or point it at the deployed Render URL to skip local networking entirely.
+
+The form has one input widget per prediction variable (8 total): free-text fields for the two continuous numeric inputs (`Rainfall_mm`, `Temperature_Celsius`), and dropdowns for the six fixed-choice inputs (`Region`, `Soil_Type`, `Crop`, `Fertilizer_Used`, `Irrigation_Used`, `Weather_Condition`). Dropdowns are used there instead of free text because those fields are closed enums on the API side (`main.py`'s `Region`/`SoilType`/`Crop`/`WeatherCondition` classes) — a typo like `"north"` instead of `"North"` would fail the API's case-sensitive validation, so constraining input to valid options client-side avoids that entirely.
+
+```bash
+flutter run -d chrome --web-port=3000   # quick web preview only — not the mobile build
+```
