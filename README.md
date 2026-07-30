@@ -41,13 +41,7 @@ Then open http://127.0.0.1:8000/docs for the Swagger UI.
 
 Live API: **https://crop-yield-api-9mdx.onrender.com** (Swagger UI at https://crop-yield-api-9mdx.onrender.com/docs).
 
-To deploy:
 
-1. Push this repo to GitHub.
-2. On Render: **New → Blueprint**, point it at this repo (picks up `render.yaml`), or **New → Web Service** with:
-   - Build Command: `pip install -r requirements.txt`
-   - Start Command: `uvicorn main:app --host 0.0.0.0 --port $PORT`
-3. Once it's live, add the deployed origin to `ALLOWED_ORIGINS` in `main.py` (needed if you deploy the Flutter app to the web too), and point `apiBaseUrl` in `crop_yield_app/lib/main.dart` at the Render URL.
 
 ## Flutter app
 
