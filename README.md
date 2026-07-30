@@ -1,6 +1,12 @@
 # Crop Yield Prediction
 
-Predicts `Yield_tons_per_hectare` from field, weather, and farming-practice data using a regression model, served through a FastAPI backend and a Flutter frontend.
+## Mission
+
+My mission is to make Nigerian smallholder farming a data-driven practice — translating soil, weather, and yield data into decisions farmers can act on directly. This project predicts `Yield_tons_per_hectare` from field, weather, and farming-practice data, served through a FastAPI backend and a Flutter mobile app.
+
+## Dataset
+
+`crop_yield.csv` — [Agriculture Crop Yield](https://www.kaggle.com/datasets/samuelotiattakorah/agriculture-crop-yield) dataset on Kaggle: 1,000,000 per-field agricultural records with region, soil type, crop, weather conditions, and farming practices, against a continuous target, `Yield_tons_per_hectare`.
 
 ## Project structure
 
@@ -10,10 +16,6 @@ Predicts `Yield_tons_per_hectare` from field, weather, and farming-practice data
 - `API/predict.py` — standalone script for a one-off prediction
 - `crop_yield_app/` — Flutter frontend
 - `best_model.joblib`, `scaler.joblib`, `feature_columns.joblib` — saved model artifacts produced by `code.ipynb`
-
-## Dataset
-
-`crop_yield.csv` — TODO: add the dataset source link here (Kaggle page, etc). Per-field agricultural records (region, soil type, crop, weather conditions, farming practices) with a continuous target, `Yield_tons_per_hectare`.
 
 ## Model
 

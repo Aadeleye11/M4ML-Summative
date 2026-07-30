@@ -4,7 +4,7 @@ Usage:
     uv run python API/predict.py
 
 Needs best_model.joblib, scaler.joblib, and feature_columns.joblib to already
-exist in the parent (summative/) folder (these get made by code.ipynb).
+exist in the summative folder made by code.ipynb.
 """
 
 import sys
