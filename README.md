@@ -4,6 +4,10 @@
 
 My mission is to make Nigerian smallholder farming a data-driven practice — translating soil, weather, and yield data into decisions farmers can act on directly. This project predicts `Yield_tons_per_hectare` from field, weather, and farming-practice data, served through a FastAPI backend and a Flutter mobile app.
 
+## Demo
+
+YouTube video demo: _TODO — add link_
+
 ## Dataset
 
 `crop_yield.csv` — [Agriculture Crop Yield](https://www.kaggle.com/datasets/samuelotiattakorah/agriculture-crop-yield) dataset on Kaggle: 1,000,000 per-field agricultural records with region, soil type, crop, weather conditions, and farming practices, against a continuous target, `Yield_tons_per_hectare`.

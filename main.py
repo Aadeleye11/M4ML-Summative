@@ -37,7 +37,13 @@ app = FastAPI(
 # no cookies or auth tokens used anywhere so allow_credentials just stays False.
 # the two routes below only ever need GET/POST and a Content-Type header.
 ALLOWED_ORIGINS = [
-    "http://localhost:3000",  # react/next dev server
+    "http://localhost:3000",
+    "http://127.0.0.1:3000",
+    "http://localhost:3001",
+    "http://127.0.0.1:3000",
+    "http://localhost:4000",
+    "http://127.0.0.1:4000",
+    "http://localhost:8000",
     "http://localhost:5173",  # vite dev server
     "https://crop-yield-api-9mdx.onrender.com",  # deployed url
 ]
