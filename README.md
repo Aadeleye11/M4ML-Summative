@@ -39,7 +39,7 @@ Then open http://127.0.0.1:8000/docs for the Swagger UI.
 
 ## Deploying
 
-Live API: **TODO — add the Render URL here once deployed** (Swagger UI at `<url>/docs`).
+Live API: **https://crop-yield-api-9mdx.onrender.com** (Swagger UI at https://crop-yield-api-9mdx.onrender.com/docs).
 
 To deploy:
 
